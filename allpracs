@@ -1,0 +1,117 @@
+classalgo:
+
+bankloan <- read.csv("C:\\Users\\abc\\Downloads\\BANK LOAN.csv")
+library(caret)
+index <- createDataPartition(bankloan$DEFAULTER, p=0.8, list=FALSE)
+View(bankloan)
+bankloan2 <- subset(bankloan, select = c(-DEFAULTER))
+bankloan3 <- scale(bankloan2)
+traindata <- bankloan3[index,]
+testdata <- bankloan2[-index,]
+Ytrain <- bankloan$DEFAULTER[index]
+Ytest <- bankloan$DEFAULTER[-index]
+library(class)
+model_knn <- knn(traindata, testdata, k=23, cl= Ytrain)
+table(Ytest, model_knn)
+specificity(as.factor(Ytest),as.factor(model_knn),cutoff = 0.5)
+sensitivity(as.factor(Ytest),as.factor(model_knn),cutoff = 0.5)
+
+clustering:
+
+library(ggplot2)
+data("iris")
+iris_data <- iris[, -5]
+
+set.seed(58)
+
+kmeans_result <- kmeans(iris_data, centers = 3, nstart = 25)
+print(kmeans_result)
+
+iris$cluster <- as.factor(kmeans_result$cluster)
+
+table(iris$Species, iris$cluster)
+
+ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) + 
+  geom_point(size = 3) + 
+  ggtitle("K-means Clustering") + 
+  theme_minimal()
+
+decision tree:
+
+
+library(rpart)
+library(rpart.plot)
+library(ggplot2)
+library(caret)
+library(e1071)
+library(pROC)
+
+data <- read.csv("C:\\Users\\abc\\Downloads\\BANK LOAN.csv") 
+
+data <- data[, -1]
+
+data$DEFAULTER <- as.factor(data$DEFAULTER)
+str(data)
+set.seed(42)
+splitIndex <- caret::createDataPartition(data$DEFAULTER, p=0.8, list=FALSE)
+traindata <- data[splitIndex, ]
+testdata <- data[-splitIndex, ]  
+
+table(traindata$DEFAULTER)
+table(testdata$DEFAULTER)
+
+dt_model <- rpart(DEFAULTER ~ ., data=traindata, method="class")
+print(dt_model)
+
+png("Decision Tree.jpeg", width=1300, height=968)
+rpart.plot(dt_model, 
+           main="Decision Tree Chart", 
+           cex=1)
+dev.off()
+dt_prob <- predict(dt_model, testdata, type="prob")
+dt_pred <- ifelse(dt_prob[,2] > 0.5, 1, 0)
+dt_pred <- as.factor(dt_pred)
+dt_conf_matrix <- confusionMatrix(dt_pred, testdata$DEFAULTER)
+print(dt_conf_matrix)
+
+dt_roc_curve <- roc(testdata$DEFAULTER, dt_prob[,2])
+plot(dt_roc_curve, main="ROC Curve - Decision Tree", 
+     col="purple", 
+     lwd=2)
+dt_auc_roc <- auc(dt_roc_curve)
+
+cat("Decision Tree AUC:",dt_auc_roc)
+
+
+line regression:
+
+library(caret)
+library(pROC)
+library(ggplot2)
+
+#Load Data enter the correct path below from ur pc where the csv file is located
+df <-read.csv("C:\\Users\\SHRUTI\\Desktop\\BANK LOAN.csv")
+
+head (df)
+df <- df[,-1]
+df$DEFAULTER <- as.factor(df$DEFAULTER)
+str(df)
+
+set.seed(123)
+
+splitindex <- createDataPartition(df$DEFAULTER, p=0.8,list=FALSE)
+traindata <- df[splitindex,]
+testdata <- df[-splitindex,]
+
+table(traindata$DEFAULTER)
+table(testdata$DEFAULTER)
+table(df$DEFAULTER)
+
+log_model <- glm(DEFAULTER~., data=traindata, family = "binomial")
+summary(log_model)
+
+probabilities <- predict(log_model, testdata, type = "response")
+predictions <- ifelse(probabilities > 0.6,1,0)
+
+conf_matrix <- confusionMatrix(as.factor(predictions),as.factor(testdata$DEFAULTER))
+print(conf_matrix)
