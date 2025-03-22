@@ -38,80 +38,50 @@ ggplot(iris, aes(x = Sepal.Length, y = Sepal.Width)) +
 
 decision tree:
 
-
+library(caret)
 library(rpart)
 library(rpart.plot)
-library(ggplot2)
-library(caret)
-library(e1071)
-library(pROC)
-
-data <- read.csv("C:\\Users\\abc\\Downloads\\BANK LOAN.csv") 
-
-data <- data[, -1]
-
-data$DEFAULTER <- as.factor(data$DEFAULTER)
-str(data)
-set.seed(42)
-splitIndex <- caret::createDataPartition(data$DEFAULTER, p=0.8, list=FALSE)
-traindata <- data[splitIndex, ]
-testdata <- data[-splitIndex, ]  
-
-table(traindata$DEFAULTER)
-table(testdata$DEFAULTER)
-
-dt_model <- rpart(DEFAULTER ~ ., data=traindata, method="class")
-print(dt_model)
-
-png("Decision Tree.jpeg", width=1300, height=968)
-rpart.plot(dt_model, 
-           main="Decision Tree Chart", 
-           cex=1)
-dev.off()
-dt_prob <- predict(dt_model, testdata, type="prob")
-dt_pred <- ifelse(dt_prob[,2] > 0.5, 1, 0)
-dt_pred <- as.factor(dt_pred)
-dt_conf_matrix <- confusionMatrix(dt_pred, testdata$DEFAULTER)
-print(dt_conf_matrix)
-
-dt_roc_curve <- roc(testdata$DEFAULTER, dt_prob[,2])
-plot(dt_roc_curve, main="ROC Curve - Decision Tree", 
-     col="purple", 
-     lwd=2)
-dt_auc_roc <- auc(dt_roc_curve)
-
-cat("Decision Tree AUC:",dt_auc_roc)
+bankloan <- read.csv("C:\\Users\\abc\\Documents\\ADExcel\\BANK LOAN.csv")
+bankloan$DEFAULTER <- as.factor(bankloan$DEFAULTER)
+set.seed(123)
+index <- createDataPartition(bankloan$DEFAULTER, p = 0.8, list = FALSE)
+traindata <- bankloan[index, ]
+testdata <- bankloan[-index, ]
+tree <- rpart(DEFAULTER ~ ., data = traindata, method = "class")
+rpart.plot(tree, type = 4, extra = 101)
+predictions <- predict(tree, testdata, type = "class")
+conf_matrix <- confusionMatrix(predictions, testdata$DEFAULTER)
+print(conf_matrix)
 
 
 line regression:
 
-library(caret)
-library(pROC)
 library(ggplot2)
+library(caret)
+data("mtcars")
+set.seed(89)
+cor(mtcars)
+sample_index <- sample(1:nrow(mtcars), 0.8 * nrow(mtcars))
+train_data <- mtcars[sample_index, ]
+test_data <- mtcars[-sample_index, ]
+linearModel <- lm(mpg ~ hp + drat + am, data = train_data)
+summary(linearModel)
 
-#Load Data enter the correct path below from ur pc where the csv file is located
-df <-read.csv("C:\\Users\\SHRUTI\\Desktop\\BANK LOAN.csv")
+time series :
 
-head (df)
-df <- df[,-1]
-df$DEFAULTER <- as.factor(df$DEFAULTER)
-str(df)
+library(ggplot2)
+library(forecast)
 
-set.seed(123)
+data("AirPassengers")
+ts_data <- ts(AirPassengers, start = c(1949, 1), frequency = 12)
 
-splitindex <- createDataPartition(df$DEFAULTER, p=0.8,list=FALSE)
-traindata <- df[splitindex,]
-testdata <- df[-splitindex,]
+plot(ts_data,
+     main = "Air Passengers Flow",
+     xlab = "Year",
+     ylab = "Passengers in thousands",
+     col = "blue"
+)
 
-table(traindata$DEFAULTER)
-table(testdata$DEFAULTER)
-table(df$DEFAULTER)
-
-log_model <- glm(DEFAULTER~., data=traindata, family = "binomial")
-summary(log_model)
-
-probabilities <- predict(log_model, testdata, type = "response")
-predictions <- ifelse(probabilities > 0.6,1,0)
-
-conf_matrix <- confusionMatrix(as.factor(predictions),as.factor(testdata$DEFAULTER))
-print(conf_matrix)
+autoplot(ts_data) + ggtitle("AirPassengers time series")
+ts_decposed <- decompose(ts_data, type = "multiplicative")
+autoplot(ts_decposed)
